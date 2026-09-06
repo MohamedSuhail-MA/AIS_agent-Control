@@ -8,7 +8,8 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  // Strict JSON parsing with a 100kb limit to prevent payload-based DoS attacks
+  app.use(express.json({ limit: "100kb" }));
 
   // Set up all API routes (Control Plane / Orchestrator)
   setupApiRoutes(app);

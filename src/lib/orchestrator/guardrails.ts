@@ -27,6 +27,11 @@ export class AIGuardrails {
     }
     const stringifiedParams = JSON.stringify(parameters || {});
     
+    // Prevent Regular Expression Denial of Service (ReDoS) by capping input length
+    if (stringifiedParams.length > 50000 || targetHost.length > 1024 || actionIdentifier.length > 1024) {
+      return { valid: false, reason: "Payload length exceeds maximum allowable limits for inspection" };
+    }
+
     // Check all fields against banned patterns
     const contentsToCheck = [targetHost, actionIdentifier, stringifiedParams];
     

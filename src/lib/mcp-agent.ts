@@ -10,6 +10,7 @@ import { WindowsSandbox } from "./agent/sandbox";
 export class RemoteExecutionAgent {
   private agentId: string | null = null;
   private isPolling = false;
+  private isPollRequestActive = false;
   private intervalId: any = null;
 
   constructor(
@@ -65,7 +66,13 @@ export class RemoteExecutionAgent {
   }
 
   private async poll() {
+    if (this.isPollRequestActive) return;
+    this.isPollRequestActive = true;
+
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000); // 10s fetch timeout
+
       const res = await fetch(`${this.controlPlaneUrl}/api/agent/poll`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,7 +80,9 @@ export class RemoteExecutionAgent {
           agent_id: this.agentId,
           targetHost: this.hostname,
         }),
+        signal: controller.signal
       });
+      clearTimeout(timeout);
 
       if (res.ok) {
         const data = await res.json();
@@ -83,8 +92,14 @@ export class RemoteExecutionAgent {
       } else {
          console.error(`[Agent ${this.hostname}] Polling failed with status: ${res.status}`);
       }
-    } catch (err) {
-      console.error(`[Agent ${this.hostname}] Polling error:`, err);
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        console.error(`[Agent ${this.hostname}] Polling timeout.`);
+      } else {
+        console.error(`[Agent ${this.hostname}] Polling error:`, err);
+      }
+    } finally {
+      this.isPollRequestActive = false;
     }
   }
 

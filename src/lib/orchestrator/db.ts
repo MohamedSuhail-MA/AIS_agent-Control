@@ -30,7 +30,9 @@ export interface AgentRecord {
   last_seen: number;
 }
 
-// In-memory simulated PostgreSQL tables
+// In-memory simulated PostgreSQL tables (with strict limits)
+const MAX_JOBS = 10000;
+const MAX_AGENTS = 5000;
 const jobs: Map<string, JobRecord> = new Map();
 const agents: Map<string, AgentRecord> = new Map();
 
@@ -51,6 +53,9 @@ export function dequeueJob(targetHost: string): JobRecord | null {
 }
 
 export function enqueueJob(targetHost: string, tool_name: string, parameters: any, signature: string, traceparent: string, timestamp: number): string {
+  if (jobs.size >= MAX_JOBS) {
+    throw new Error("Job queue is full. Max capacity reached.");
+  }
   const job_id = uuidv4();
   const payload: JobPayload = {
     job_id,
@@ -106,6 +111,10 @@ export function registerAgent(hostname: string, publicKey: string): string {
     }
   }
 
+  if (agents.size >= MAX_AGENTS) {
+    throw new Error("Agent registry is full. Max capacity reached.");
+  }
+
   const agent_id = uuidv4();
   agents.set(agent_id, {
     id: agent_id,
@@ -135,7 +144,11 @@ export function updateAgentHeartbeat(agent_id: string) {
 }
 
 export function getAllJobs() {
-  return Array.from(jobs.values()).sort((a, b) => b.created_at - a.created_at);
+  // Limit output to prevent event loop blocking on huge maps
+  const maxOutput = 500;
+  return Array.from(jobs.values())
+    .sort((a, b) => b.created_at - a.created_at)
+    .slice(0, maxOutput);
 }
 
 export function getAllAgents() {
