@@ -49,7 +49,11 @@ npm run build
 
 # Builds the Standalone Edge Agent CLI (dist/agent.cjs)
 npm run build:agent
+
+# Builds the 100% Zero-Dependency Native Windows Executable
+npm run build:exe
 ```
+This final step uses Node.js SEA (Single Executable Applications) to compile the Edge Agent into a fully independent `ZeroTrustAgent.exe`. This allows you to drop the executable onto any Windows Server with **no Node.js installation or dependencies required**, perfectly satisfying the "install and forget" rule.
 
 ### Docker
 A multi-stage `Dockerfile` is included for zero-dependency containerized deployments to Cloud Run or Kubernetes.
