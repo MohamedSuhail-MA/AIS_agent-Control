@@ -28,7 +28,7 @@ describe("Agent CLI Argument Parser", () => {
     expect(() => parseAgentArgs(args)).toThrowError(/Missing required argument: --orchestratorKey/);
   });
 
-  it("[CLI-Parse-3] should use correct defaults when optional arguments are omitted", () => {
+  it("[CLI-Parse-3] should generate dynamic key when agentKey is omitted", () => {
     const args = [
       "--orchestratorKey", "mock_key_123"
     ];
@@ -38,7 +38,12 @@ describe("Agent CLI Argument Parser", () => {
     expect(config.host).toBe("WIN-SERVER-01");
     expect(config.orchestratorKey).toBe("mock_key_123");
     expect(config.interval).toBe(5000);
-    expect(config.agentKey).toBe("mock_priv_key");
+    // Dynamic generation asserts
+    expect(config.agentKey).toBeDefined();
+    expect(typeof config.agentKey).toBe("string");
+    expect(config.agentKey.length).toBeGreaterThan(30);
+    expect(config.agentPublicKey).toBeDefined();
+    expect(config.agentPublicKey.length).toBeGreaterThan(30);
   });
 
   it("[CLI-Parse-4] should support short flags", () => {

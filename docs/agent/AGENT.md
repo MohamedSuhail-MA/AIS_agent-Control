@@ -19,6 +19,9 @@ The polling agent serves as the hardened gateway between the highly restricted o
 ## Production Execution
 The agent has been modularized into a standalone Node CLI that can be compiled and deployed safely.
 
+### Dynamic mTLS Auto-Enrollment CA
+To minimize human error and prevent hardcoded secret leaks, the Edge Agent now supports dynamic cryptographic bootstrapping. If a pre-shared agent key is not provided on startup, the Agent will automatically generate a fresh Ed25519 keypair and submit the public key as a Certificate Signing Request (CSR) to the Control Plane for manual human approval.
+
 ### Building the Binary
 Run `npm run build:agent` to bundle the agent securely via esbuild. This generates `dist/agent.cjs`.
 
@@ -32,5 +35,5 @@ node dist/agent.cjs --url <CONTROL_PLANE_URL> --host <WINDOWS_HOSTNAME> --orches
 - `--host`, `-h`: Target execution hostname (default: `WIN-SERVER-01`).
 - `--orchestratorKey`, `-o`: (Required) Ed25519 public key from the orchestrator.
 - `--interval`, `-i`: Polling interval in ms (default: `5000`).
-- `--agentKey`, `-k`: The local agent private key for mTLS (simulated).
+- `--agentKey`, `-k`: (Optional) The local agent private key. If omitted, dynamically generates a keypair.
 

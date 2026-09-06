@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import nacl from "tweetnacl";
+import { WindowsSandbox } from "./agent/sandbox";
 
 /**
  * Simulated Rust Polling Agent.
@@ -18,16 +19,19 @@ export class RemoteExecutionAgent {
     private privateKey: string
   ) {}
 
-  async register() {
+  async register(dynamicPublicKey?: string) {
     console.log(`[Agent ${this.hostname}] Submitting CSR to Control Plane...`);
+    const keyToRegister = dynamicPublicKey || this.publicKey;
+    
     const res = await fetch(`${this.controlPlaneUrl}/api/agent/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         hostname: this.hostname,
-        publicKey: this.publicKey,
+        publicKey: keyToRegister,
       }),
     });
+
     
     if (res.ok) {
       const data = await res.json();
@@ -98,13 +102,19 @@ export class RemoteExecutionAgent {
     console.log(`[Agent ${this.hostname}] Configuring JOBOBJECT_BASIC_LIMIT_INFORMATION (KILL_ON_JOB_CLOSE)...`);
     
     // 4. Execute in PowerShell Constrained Language Mode (Simulated)
-    console.log(`[Agent ${this.hostname}] Invoking PowerShell with __PSLockdownPolicy=4...`);
-    
-    // Simulate work
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    
-    console.log(`[Agent ${this.hostname}] Job ${job.job_id} executed successfully.`);
-    await this.reportCompletion(job.job_id, "completed", { output: "Command executed successfully in Constrained Language Mode." });
+    try {
+      const executionResult = WindowsSandbox.wrapInJobObject(() => {
+        console.log(`[Agent ${this.hostname}] Invoking PowerShell with __PSLockdownPolicy=4...`);
+        // We pass tool_name for simplicity in testing as the command string
+        return WindowsSandbox.executeInConstrainedLanguageMode(job.tool_name);
+      });
+
+      console.log(`[Agent ${this.hostname}] Job ${job.job_id} executed successfully.`);
+      await this.reportCompletion(job.job_id, "completed", { output: executionResult });
+    } catch (sandboxErr: any) {
+      console.error(`[Agent ${this.hostname}] Execution Guardrail Blocked Job:`, sandboxErr.message);
+      await this.reportCompletion(job.job_id, "failed", { error: sandboxErr.message });
+    }
   }
 
   private verifySignature(job: any): boolean {

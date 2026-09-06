@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import { setupApiRoutes } from "./src/lib/orchestrator/index";
+import { HealthSweeper } from "./src/lib/orchestrator/sweeper";
 
 async function startServer() {
   const app = express();
@@ -12,7 +13,14 @@ async function startServer() {
   // Set up all API routes (Control Plane / Orchestrator)
   setupApiRoutes(app);
 
+  // Start background health sweeps
+  setInterval(() => {
+    HealthSweeper.sweepOfflineAgents();
+    HealthSweeper.sweepStaleJobs();
+  }, 10000);
+
   // Vite middleware for development
+
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },

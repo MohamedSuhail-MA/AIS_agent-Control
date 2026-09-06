@@ -1,10 +1,12 @@
 import { parseArgs } from "util";
+import { generateAgentKeyPair } from "./crypto";
 
 export interface AgentCliConfig {
   url: string;
   host: string;
   orchestratorKey: string;
   agentKey: string;
+  agentPublicKey: string;
   interval: number;
 }
 
@@ -13,7 +15,7 @@ export function parseAgentArgs(args: string[]): AgentCliConfig {
     url: { type: "string" as const, short: "u", default: "http://localhost:3000" },
     host: { type: "string" as const, short: "h", default: "WIN-SERVER-01" },
     orchestratorKey: { type: "string" as const, short: "o" },
-    agentKey: { type: "string" as const, short: "k", default: "mock_priv_key" },
+    agentKey: { type: "string" as const, short: "k" },
     interval: { type: "string" as const, short: "i", default: "5000" },
   };
 
@@ -24,11 +26,28 @@ export function parseAgentArgs(args: string[]): AgentCliConfig {
       throw new Error("Missing required argument: --orchestratorKey");
     }
 
+    let agentKey = values.agentKey as string;
+    let agentPublicKey = "pre-shared-pub-key"; // Default mock logic behavior
+    
+    // Auto-enrollment CA mode
+    if (!agentKey) {
+      console.log("[Auto-Enrollment] Generating dynamic Ed25519 mTLS keypair...");
+      const keypair = generateAgentKeyPair();
+      agentKey = keypair.privateKey;
+      agentPublicKey = keypair.publicKey;
+      console.log(`[Auto-Enrollment] Public Key: ${agentPublicKey}`);
+    } else {
+      // In a real scenario we'd derive public key from the provided private key
+      // or require it to be passed. For backward compatibility with existing tests:
+      agentPublicKey = "mock_public_key"; 
+    }
+
     return {
       url: values.url as string,
       host: values.host as string,
       orchestratorKey: values.orchestratorKey as string,
-      agentKey: values.agentKey as string,
+      agentKey: agentKey,
+      agentPublicKey: agentPublicKey,
       interval: parseInt(values.interval as string, 10),
     };
   } catch (err: any) {

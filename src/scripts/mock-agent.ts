@@ -1,16 +1,19 @@
 import { RemoteExecutionAgent } from "../lib/mcp-agent";
 import { ORCHESTRATOR_PUBLIC_KEY_B64 } from "../lib/orchestrator/crypto";
+import { generateAgentKeyPair } from "../lib/agent/crypto";
 
 async function runMockAgent() {
   const url = "http://localhost:3000";
+  const keypair = generateAgentKeyPair();
+  
   const agent = new RemoteExecutionAgent(
     url,
     "WIN-PROD-SERVER-01",
     ORCHESTRATOR_PUBLIC_KEY_B64,
-    "mock_private_key_ed25519" // Agent's private key (unused in this mock)
+    keypair.privateKey
   );
-
-  await agent.register();
+  
+  await agent.register(keypair.publicKey);
   // Automatically start polling (in a real system, would wait for approval)
   agent.startPolling(5000);
   
@@ -18,3 +21,4 @@ async function runMockAgent() {
 }
 
 runMockAgent();
+

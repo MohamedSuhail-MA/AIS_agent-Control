@@ -21,7 +21,9 @@ async function run() {
       config.agentKey
     );
 
-    await agent.register();
+    // Enroll with the key (either passed or dynamically generated in parseAgentArgs)
+    await agent.register(config.agentPublicKey);
+    
     agent.startPolling(config.interval);
     
     // Keep alive gracefully
@@ -40,3 +42,4 @@ async function run() {
 }
 
 run();
+
