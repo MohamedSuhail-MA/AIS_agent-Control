@@ -1,0 +1,6 @@
+{
+  "name": "Zero-Trust Remote Execution Platform",
+  "description": "Enterprise-Grade Model Context Protocol (MCP) orchestrator and agent control plane.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
