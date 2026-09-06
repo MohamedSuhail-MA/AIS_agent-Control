@@ -15,3 +15,22 @@ The polling agent serves as the hardened gateway between the highly restricted o
 - `register()`: Submits the host identity. Wait states for human CSR approval.
 - `poll()`: Retrieves tasks using `SELECT ... FOR UPDATE SKIP LOCKED` logic remotely.
 - `executeJob()`: The security boundary. Validates Ed25519 and simulates the NT Kernel handoff.
+
+## Production Execution
+The agent has been modularized into a standalone Node CLI that can be compiled and deployed safely.
+
+### Building the Binary
+Run `npm run build:agent` to bundle the agent securely via esbuild. This generates `dist/agent.cjs`.
+
+### CLI Usage
+```bash
+node dist/agent.cjs --url <CONTROL_PLANE_URL> --host <WINDOWS_HOSTNAME> --orchestratorKey <B64_PUBLIC_KEY>
+```
+
+**Arguments:**
+- `--url`, `-u`: The API endpoint for the control plane (default: `http://localhost:3000`).
+- `--host`, `-h`: Target execution hostname (default: `WIN-SERVER-01`).
+- `--orchestratorKey`, `-o`: (Required) Ed25519 public key from the orchestrator.
+- `--interval`, `-i`: Polling interval in ms (default: `5000`).
+- `--agentKey`, `-k`: The local agent private key for mTLS (simulated).
+
