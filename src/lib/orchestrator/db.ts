@@ -66,7 +66,7 @@ export function enqueueJob(targetHost: string, tool_name: string, parameters: an
     payload,
     status: "pending",
     visible_at: 0,
-    created_at: Date.now(),
+    created_at: timestamp || Date.now(),
     targetHost,
   };
 
@@ -76,13 +76,24 @@ export function enqueueJob(targetHost: string, tool_name: string, parameters: an
 
 export function completeJob(job_id: string, result: any, status: "completed" | "failed") {
   const job = jobs.get(job_id);
-  if (job) {
+  if (job && job.status === "in_progress") {
     job.status = status;
     job.result = result;
+    job.visible_at = 0;
   }
 }
 
 export function registerAgent(hostname: string, publicKey: string): string {
+  // Check if agent already exists for this host to avoid duplicate ghost agents
+  for (const [id, agent] of agents.entries()) {
+    if (agent.hostname === hostname) {
+      agent.publicKey = publicKey;
+      agent.status = "pending";
+      agent.last_seen = Date.now();
+      return id;
+    }
+  }
+
   const agent_id = uuidv4();
   agents.set(agent_id, {
     id: agent_id,
@@ -103,8 +114,11 @@ export function approveAgent(agent_id: string) {
 
 export function updateAgentHeartbeat(agent_id: string) {
   const agent = agents.get(agent_id);
-  if (agent) {
+  if (agent && agent.status !== "rejected") {
     agent.last_seen = Date.now();
+    if (agent.status === "offline") {
+      agent.status = "approved"; // Recover from offline if heartbeat resumes
+    }
   }
 }
 

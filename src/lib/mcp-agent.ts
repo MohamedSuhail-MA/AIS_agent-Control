@@ -43,7 +43,9 @@ export class RemoteExecutionAgent {
   }
 
   startPolling(intervalMs = 5000) {
-    if (this.isPolling) return;
+    if (this.isPolling) {
+      this.stopPolling();
+    }
     if (!this.agentId) {
       console.error(`[Agent ${this.hostname}] Cannot poll without agent ID. Call register() first.`);
       return;
@@ -75,9 +77,11 @@ export class RemoteExecutionAgent {
 
       if (res.ok) {
         const data = await res.json();
-        if (data.job) {
+        if (data && data.job && data.job.job_id) {
           await this.executeJob(data.job);
         }
+      } else {
+         console.error(`[Agent ${this.hostname}] Polling failed with status: ${res.status}`);
       }
     } catch (err) {
       console.error(`[Agent ${this.hostname}] Polling error:`, err);
@@ -139,14 +143,18 @@ export class RemoteExecutionAgent {
   }
 
   private async reportCompletion(job_id: string, status: "completed" | "failed", result: any) {
-    await fetch(`${this.controlPlaneUrl}/api/agent/complete`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        job_id,
-        status,
-        result,
-      }),
-    });
+    try {
+      await fetch(`${this.controlPlaneUrl}/api/agent/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          job_id,
+          status,
+          result,
+        }),
+      });
+    } catch (err) {
+      console.error(`[Agent ${this.hostname}] Failed to report completion for job ${job_id}:`, err);
+    }
   }
 }

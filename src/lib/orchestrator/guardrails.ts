@@ -3,10 +3,18 @@ export class AIGuardrails {
     /ignore (all )?previous instructions/i,
     /system prompt/i,
     /drop table/i,
-    /rm -rf/i,
+    /\brm\s+-rf\b/i,
     /bypass/i,
     /\bexec\(/i,
-    /eval\(/i
+    /eval\(/i,
+    /\bsudo\b/i,
+    /\bbash\b/i,
+    /\bpowershell\b/i,
+    /\bcmd\b/i,
+    /\bcurl\b/i,
+    /\bwget\b/i,
+    /invoke-expression/i,
+    /\biex\b/i
   ];
 
   /**
@@ -14,6 +22,9 @@ export class AIGuardrails {
    * or destructive shell commands before allowing it into the execution queue.
    */
   static validatePayload(targetHost: string, actionIdentifier: string, parameters: any): { valid: boolean; reason?: string } {
+    if (!targetHost || !actionIdentifier) {
+      return { valid: false, reason: "Missing required fields" };
+    }
     const stringifiedParams = JSON.stringify(parameters || {});
     
     // Check all fields against banned patterns

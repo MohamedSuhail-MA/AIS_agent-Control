@@ -42,13 +42,18 @@ export function parseAgentArgs(args: string[]): AgentCliConfig {
       agentPublicKey = "mock_public_key"; 
     }
 
+    let parsedInterval = parseInt(values.interval as string, 10);
+    if (isNaN(parsedInterval) || parsedInterval <= 0) {
+      parsedInterval = 5000;
+    }
+
     return {
       url: values.url as string,
       host: values.host as string,
       orchestratorKey: values.orchestratorKey as string,
       agentKey: agentKey,
       agentPublicKey: agentPublicKey,
-      interval: parseInt(values.interval as string, 10),
+      interval: parsedInterval,
     };
   } catch (err: any) {
     throw new Error(`CLI Parse Error: ${err.message}`);

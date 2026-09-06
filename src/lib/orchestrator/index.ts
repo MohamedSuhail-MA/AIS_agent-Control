@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import { Express } from "express";
 import { z } from "zod";
 import { 
@@ -61,7 +62,9 @@ export function setupApiRoutes(app: Express) {
       const signature = signJobPayload(payload.targetHost, payload.actionIdentifier, payload.parameters || {}, timestamp);
       
       // 3. Inject traceparent
-      const traceparent = `00-${Math.random().toString(16).slice(2)}-${Math.random().toString(16).slice(2,18)}-01`;
+      const traceId = randomBytes(16).toString("hex");
+      const spanId = randomBytes(8).toString("hex");
+      const traceparent = `00-${traceId}-${spanId}-01`;
       
       // 4. Enqueue Job
       const jobId = enqueueJob(payload.targetHost, payload.actionIdentifier, payload.parameters || {}, signature, traceparent, timestamp);
@@ -85,10 +88,20 @@ export function setupApiRoutes(app: Express) {
   app.post("/api/agent/poll", (req, res) => {
     // In reality, this would use mTLS client certificates
     const { agent_id, targetHost } = req.body;
-    updateAgentHeartbeat(agent_id);
     
-    // Check if approved (skipping actual DB check for simplicity in polling, 
-    // but in a real system we'd verify agent status is "approved")
+    const agents = getAllAgents();
+    const agent = agents.find(a => a.id === agent_id);
+    if (!agent) {
+      return res.status(401).json({ error: "Unauthorized: Agent not found" });
+    }
+    if (agent.status !== "approved") {
+      return res.status(403).json({ error: "Forbidden: Agent not approved" });
+    }
+    if (agent.hostname !== targetHost) {
+      return res.status(400).json({ error: "Bad Request: Hostname mismatch" });
+    }
+
+    updateAgentHeartbeat(agent_id);
     
     const job = dequeueJob(targetHost);
     if (job) {
@@ -100,6 +113,9 @@ export function setupApiRoutes(app: Express) {
 
   app.post("/api/agent/complete", (req, res) => {
     const { job_id, result, status } = req.body;
+    if (!job_id || !status || (status !== "completed" && status !== "failed")) {
+      return res.status(400).json({ error: "Invalid status or missing job_id" });
+    }
     completeJob(job_id, result, status);
     res.json({ success: true });
   });
@@ -116,6 +132,13 @@ export function setupApiRoutes(app: Express) {
 
   app.post("/api/ui/approve-agent", (req, res) => {
     const { agent_id } = req.body;
+    if (!agent_id) return res.status(400).json({ error: "Missing agent_id" });
+    
+    const agents = getAllAgents();
+    if (!agents.find(a => a.id === agent_id)) {
+      return res.status(404).json({ error: "Agent not found" });
+    }
+
     approveAgent(agent_id);
     res.json({ success: true });
   });

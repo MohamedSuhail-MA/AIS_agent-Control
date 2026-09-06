@@ -21,12 +21,12 @@ export class WindowsSandbox {
     }
 
     // 2. Block COM Objects (often used to bypass execution policies)
-    if (lowerCmd.includes("new-object -comobject")) {
+    if (lowerCmd.includes("new-object") && lowerCmd.includes("-comobject")) {
       throw new Error("WDAC_BLOCK: COM Object instantiation is restricted in this execution context.");
     }
 
     // 3. Block external payloads memory injection
-    if (lowerCmd.includes("virtualalloc") || lowerCmd.includes("loadlibrary")) {
+    if (lowerCmd.includes("virtualalloc") || lowerCmd.includes("loadlibrary") || lowerCmd.includes("invoke-expression") || lowerCmd.includes("iex") || lowerCmd.includes("wscript") || lowerCmd.includes("mshta")) {
       throw new Error("WDAC_BLOCK: Memory allocation and dynamic library loading are strictly prohibited.");
     }
 
