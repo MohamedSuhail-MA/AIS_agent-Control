@@ -106,13 +106,19 @@ export default function App() {
                         <p className="text-xs text-neutral-500 font-mono truncate w-40" title={agent.id}>{agent.id.split('-')[0]}...</p>
                       </div>
                     </div>
-                    {agent.status === "approved" ? (
+                    {agent.status === "approved" && (
                       <span className="bg-emerald-100 text-emerald-800 text-xs font-medium px-2.5 py-1 rounded-full flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3" /> Active
                       </span>
-                    ) : (
+                    )}
+                    {agent.status === "pending" && (
                       <span className="bg-amber-100 text-amber-800 text-xs font-medium px-2.5 py-1 rounded-full flex items-center gap-1">
                         <Clock className="w-3 h-3" /> Pending CSR
+                      </span>
+                    )}
+                    {agent.status === "offline" && (
+                      <span className="bg-neutral-100 text-neutral-600 text-xs font-medium px-2.5 py-1 rounded-full flex items-center gap-1">
+                        <ShieldAlert className="w-3 h-3" /> Offline
                       </span>
                     )}
                   </div>

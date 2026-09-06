@@ -9,6 +9,11 @@ Rather than relying on Kafka or external message brokers, this architecture leve
 - **Resilience via Visibility Timeouts**: If a worker node crashes mid-execution, the job is not lost permanently. When a job is locked, `visible_at` is set 60 seconds into the future. 
 - **Automated Health Sweeper**: A continuous background routine monitors the fleet. It transitions agents missing their heartbeats to an `offline` status, and aggressively resets stale job locks back to `pending` status so surviving nodes can resume execution without delay.
 
+## AI Guardrails & Prompt Injection Filtering
+Before any tool call is enqueued to the edge agent, the orchestrator executes a rigid, intelligence-layer validation check.
+- **Lexical Pattern Blocking**: The `AIGuardrails` module scans the `targetHost`, `actionIdentifier`, and `parameters` payload against known prompt injection and system bypass patterns (e.g. "ignore previous instructions", "bypass").
+- **Destructive Command Filtering**: Obvious malicious OS or DB commands (e.g., `rm -rf`, `DROP TABLE`, `exec()`, `eval()`) are blocked at the perimeter. This ensures that even if an upstream LLM hallucinated or was tricked into emitting a malicious payload, it never reaches the zero-trust execution boundary.
+
 ## Endpoints Deep Dive
 
 ### MCP Provider Routes (`/api/mcp/tools/*`)

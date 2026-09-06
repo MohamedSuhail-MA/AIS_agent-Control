@@ -30,11 +30,13 @@ This repository contains the **Enterprise-Grade Zero-Trust Remote Execution Plat
 - **Documentation**: Developed specific architecture references for the Control Plane and Edge Agent logic.
 - **Agent CLI Productionization**: Extracted the agent into a robust `util.parseArgs` CLI (`src/bin/agent.ts`) that builds to a standalone bundle via `esbuild` (`npm run build:agent`).
 - **WDAC Integration Testing**: Refactored the core execution block into a decoupled `WindowsSandbox` module and proved safety mechanisms through 7 dedicated Vitest scenarios modeling COM instantiation and reflection blocking.
-- **Production Key Exchange & Health Monitoring**: Replaced pre-shared secrets with dynamic mTLS auto-enrolling CA key generation. Implemented a recurring Node background sweeper on the Control Plane to reap dead agent sessions and stale job locks aggressively. (101 Total Tests passing).
+- **Production Key Exchange & Health Monitoring**: Replaced pre-shared secrets with dynamic mTLS auto-enrolling CA key generation. Implemented a recurring Node background sweeper on the Control Plane to reap dead agent sessions and stale job locks aggressively. 
+- **AI Prompt Injection Guardrails**: Introduced an intelligence-layer filter mapping (`AIGuardrails`) on the orchestrator edge to evaluate structural validity and catch malicious LLM logic bypass attempts before queueing.
+- **Agent UI / Visualizer**: Verified and completed the frontend dashboard implementation (`App.tsx`) leveraging React, Tailwind CSS, and Framer Motion to visualize agent statuses, approve CSRs, and monitor the real-time execution queue. (105 Total Tests passing).
 
 ### ⏳ Pending / Next Steps
-- **LLM Prompt Injection Filters / AI Guardrails**: Introduce an intelligence-layer filter mapping on the orchestrator edge to evaluate structural validity and catch malicious LLM logic bypass attempts before queueing.
-- **Agent UI**: Build out the frontend visualizer.
+- **End-to-End System Integration**: Conduct a full end-to-end integration test flow linking a mocked LLM MCP generation, the Guardrails filter, queue processing, and Edge Agent mock execution.
+- **Deployment Preparation**: Verify all build artifacts (`server.cjs`, `agent.cjs`) are optimized and configured for seamless containerized rollout.
 
 ## 3. Core Architectural Rules (DO NOT BREAK)
 1. **Never accept unverified payloads:** `verifyJobPayload` must ALWAYS run before executing a command.

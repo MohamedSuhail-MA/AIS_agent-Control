@@ -11,6 +11,7 @@ import {
   getAllAgents
 } from "./db.js";
 import { signJobPayload } from "./crypto.js";
+import { AIGuardrails } from "./guardrails.js";
 
 // Schemas
 const toolCallSchema = z.object({
@@ -49,6 +50,12 @@ export function setupApiRoutes(app: Express) {
       // 1. Validate JSON schema
       const payload = toolCallSchema.parse(req.body);
       
+      // 1.5 Evaluate AI Guardrails
+      const guardrailCheck = AIGuardrails.validatePayload(payload.targetHost, payload.actionIdentifier, payload.parameters);
+      if (!guardrailCheck.valid) {
+        return res.status(403).json({ error: "Security Violation", details: guardrailCheck.reason });
+      }
+
       // 2. Cryptographically sign the payload (Simulated Ed25519)
       const timestamp = Date.now();
       const signature = signJobPayload(payload.targetHost, payload.actionIdentifier, payload.parameters || {}, timestamp);

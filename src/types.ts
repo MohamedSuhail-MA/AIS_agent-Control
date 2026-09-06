@@ -23,6 +23,6 @@ export interface AgentRecord {
   id: string;
   hostname: string;
   publicKey: string;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "offline";
   last_seen: number;
 }
