@@ -1,12 +1,13 @@
 import { RemoteExecutionAgent } from "../lib/mcp-agent";
+import { ORCHESTRATOR_PUBLIC_KEY_B64 } from "../lib/orchestrator/crypto";
 
 async function runMockAgent() {
   const url = "http://localhost:3000";
   const agent = new RemoteExecutionAgent(
     url,
     "WIN-PROD-SERVER-01",
-    "mock_public_key_ed25519",
-    "mock_private_key_ed25519"
+    ORCHESTRATOR_PUBLIC_KEY_B64,
+    "mock_private_key_ed25519" // Agent's private key (unused in this mock)
   );
 
   await agent.register();

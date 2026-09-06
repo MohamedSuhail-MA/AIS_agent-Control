@@ -9,7 +9,8 @@ import {
   updateAgentHeartbeat,
   getAllJobs,
   getAllAgents
-} from "./db";
+} from "./db.js";
+import { signJobPayload } from "./crypto.js";
 
 // Schemas
 const toolCallSchema = z.object({
@@ -49,14 +50,14 @@ export function setupApiRoutes(app: Express) {
       const payload = toolCallSchema.parse(req.body);
       
       // 2. Cryptographically sign the payload (Simulated Ed25519)
-      // In a real system, the orchestrator signs it. Here, we'll pretend the orchestrator signed it.
-      const signature = Buffer.from("simulated_ed25519_signature_" + payload.actionIdentifier).toString("base64");
+      const timestamp = Date.now();
+      const signature = signJobPayload(payload.targetHost, payload.actionIdentifier, payload.parameters || {}, timestamp);
       
       // 3. Inject traceparent
       const traceparent = `00-${Math.random().toString(16).slice(2)}-${Math.random().toString(16).slice(2,18)}-01`;
       
       // 4. Enqueue Job
-      const jobId = enqueueJob(payload.targetHost, payload.actionIdentifier, payload.parameters || {}, signature, traceparent);
+      const jobId = enqueueJob(payload.targetHost, payload.actionIdentifier, payload.parameters || {}, signature, traceparent, timestamp);
       
       res.json({ success: true, job_id: jobId, status: "queued" });
     } catch (err: any) {

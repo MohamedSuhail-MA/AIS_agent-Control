@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import nacl from "tweetnacl";
 
 /**
  * Simulated Rust Polling Agent.
@@ -83,7 +84,7 @@ export class RemoteExecutionAgent {
     console.log(`[Agent ${this.hostname}] Received Job ${job.job_id}`);
     
     // 1. Verify Ed25519 Cryptographic Signature
-    const isValid = this.verifySignature(job.parameters, job.orchestrator_signature);
+    const isValid = this.verifySignature(job);
     if (!isValid) {
       console.error(`[Agent ${this.hostname}] CRITICAL: Invalid Ed25519 signature. Dropping job.`);
       await this.reportCompletion(job.job_id, "failed", "Invalid Signature");
@@ -106,11 +107,25 @@ export class RemoteExecutionAgent {
     await this.reportCompletion(job.job_id, "completed", { output: "Command executed successfully in Constrained Language Mode." });
   }
 
-  private verifySignature(parameters: any, signature: string): boolean {
-    // In a real implementation, we would use tweetnacl to verify the Ed25519 signature
-    // using the orchestrator's public key. For this simulation, we'll assume it's valid
-    // if a signature is present.
-    return !!signature;
+  private verifySignature(job: any): boolean {
+    try {
+      const publicKeyBytes = Buffer.from(this.publicKey, "base64");
+      const signatureBytes = Buffer.from(job.orchestrator_signature, "base64");
+      
+      const messageString = JSON.stringify({
+        targetHost: this.hostname,
+        actionIdentifier: job.tool_name,
+        parameters: job.parameters,
+        timestamp: job.timestamp
+      });
+      const messageBytes = Buffer.from(messageString, "utf-8");
+      
+      const isValid = nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes);
+      return isValid;
+    } catch (err) {
+      console.error(`[Agent ${this.hostname}] Signature verification failed:`, err);
+      return false;
+    }
   }
 
   private async reportCompletion(job_id: string, status: "completed" | "failed", result: any) {

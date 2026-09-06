@@ -163,7 +163,7 @@ export default function App() {
             <table className="w-full text-left text-sm">
               <thead className="bg-neutral-50 text-neutral-600 border-b border-neutral-200">
                 <tr>
-                  <th className="px-6 py-4 font-medium">Job ID</th>
+                  <th className="px-6 py-4 font-medium">Job ID / Trace</th>
                   <th className="px-6 py-4 font-medium">Target Host</th>
                   <th className="px-6 py-4 font-medium">Action</th>
                   <th className="px-6 py-4 font-medium">Status</th>
@@ -178,8 +178,13 @@ export default function App() {
                     key={job.id}
                     className="hover:bg-neutral-50 transition-colors"
                   >
-                    <td className="px-6 py-4 font-mono text-xs text-neutral-500">
-                      {job.id.split('-')[0]}...
+                    <td className="px-6 py-4">
+                      <div className="font-mono text-xs text-neutral-800 font-semibold mb-1">
+                        {job.id.split('-')[0]}...
+                      </div>
+                      <div className="font-mono text-[10px] text-neutral-400" title="OpenTelemetry Traceparent">
+                        {job.payload.mcp_traceparent}
+                      </div>
                     </td>
                     <td className="px-6 py-4 font-medium">
                       {job.targetHost}

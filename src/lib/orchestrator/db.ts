@@ -50,7 +50,7 @@ export function dequeueJob(targetHost: string): JobRecord | null {
   return null;
 }
 
-export function enqueueJob(targetHost: string, tool_name: string, parameters: any, signature: string, traceparent: string): string {
+export function enqueueJob(targetHost: string, tool_name: string, parameters: any, signature: string, traceparent: string, timestamp: number): string {
   const job_id = uuidv4();
   const payload: JobPayload = {
     job_id,
@@ -58,7 +58,7 @@ export function enqueueJob(targetHost: string, tool_name: string, parameters: an
     tool_name,
     parameters,
     orchestrator_signature: signature,
-    timestamp: Date.now(),
+    timestamp: timestamp,
   };
 
   const record: JobRecord = {
