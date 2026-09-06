@@ -123,6 +123,13 @@ export class RemoteExecutionAgent {
 
   private verifySignature(job: any): boolean {
     try {
+      // Prevent replay attacks (5 minute window)
+      const now = Date.now();
+      if (Math.abs(now - job.timestamp) > 300000) {
+        console.error(`[Agent ${this.hostname}] Replay Attack Mitigated: Job timestamp is stale or from the future.`);
+        return false;
+      }
+
       const publicKeyBytes = Buffer.from(this.publicKey, "base64");
       const signatureBytes = Buffer.from(job.orchestrator_signature, "base64");
       

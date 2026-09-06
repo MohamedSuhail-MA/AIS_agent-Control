@@ -57,4 +57,25 @@ describe("Health Sweeper Subsystem", () => {
     expect(checkJob?.status).toBe("pending");
     expect(checkJob?.visible_at).toBe(0);
   });
+
+  it("[Sweeper-4] should delete completed jobs past retention threshold", () => {
+    const jobId = enqueueJob("SWEEP-HOST-4", "action", {}, "sig", "trace", Date.now());
+    const job = dequeueJob("SWEEP-HOST-4");
+    expect(job).toBeDefined();
+
+    completeJob(jobId, "success", "completed");
+
+    // Fake created_at
+    const jobs = getAllJobs();
+    const checkJob = jobs.find(j => j.id === jobId);
+    if (checkJob) {
+      checkJob.created_at = Date.now() - 4000000;
+    }
+
+    const sweptCount = HealthSweeper.sweepCompletedJobs(3600000);
+    expect(sweptCount).toBeGreaterThanOrEqual(1);
+
+    const checkJobAgain = getAllJobs().find(j => j.id === jobId);
+    expect(checkJobAgain).toBeUndefined();
+  });
 });

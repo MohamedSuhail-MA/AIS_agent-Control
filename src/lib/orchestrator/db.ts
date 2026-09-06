@@ -83,6 +83,18 @@ export function completeJob(job_id: string, result: any, status: "completed" | "
   }
 }
 
+export function deleteOldJobs(retentionMs: number): number {
+  const now = Date.now();
+  let deletedCount = 0;
+  for (const [jobId, job] of jobs.entries()) {
+    if ((job.status === "completed" || job.status === "failed") && (now - job.created_at > retentionMs)) {
+      jobs.delete(jobId);
+      deletedCount++;
+    }
+  }
+  return deletedCount;
+}
+
 export function registerAgent(hostname: string, publicKey: string): string {
   // Check if agent already exists for this host to avoid duplicate ghost agents
   for (const [id, agent] of agents.entries()) {

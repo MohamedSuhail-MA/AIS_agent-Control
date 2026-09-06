@@ -1,4 +1,4 @@
-import { getAllAgents, getAllJobs } from "./db";
+import { getAllAgents, getAllJobs, deleteOldJobs } from "./db";
 
 export class HealthSweeper {
   /**
@@ -42,5 +42,15 @@ export class HealthSweeper {
       }
     }
     return swept;
+  }
+
+  /**
+   * Sweeps completed and failed jobs older than retention threshold to prevent memory leaks.
+   * 
+   * @param retentionMs Default 1 hour
+   * @returns Number of jobs deleted
+   */
+  static sweepCompletedJobs(retentionMs = 3600000): number {
+    return deleteOldJobs(retentionMs);
   }
 }

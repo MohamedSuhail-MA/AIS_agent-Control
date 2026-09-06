@@ -17,6 +17,7 @@ async function startServer() {
   setInterval(() => {
     HealthSweeper.sweepOfflineAgents();
     HealthSweeper.sweepStaleJobs();
+    HealthSweeper.sweepCompletedJobs();
   }, 10000);
 
   // Vite middleware for development
