@@ -1,0 +1,32 @@
+{
+  "tools": [
+    {
+      "name": "get_service_status",
+      "description": "Retrieves the status of a Windows Service.",
+      "script_path": "scripts/get_service.ps1",
+      "requires_approval": false,
+      "parameters": [
+        {
+          "name": "serviceName",
+          "type": "string",
+          "description": "The name of the service to query",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "restart_service",
+      "description": "Restarts a Windows Service.",
+      "script_path": "scripts/restart_service.ps1",
+      "requires_approval": true,
+      "parameters": [
+        {
+          "name": "serviceName",
+          "type": "string",
+          "description": "The name of the service to restart",
+          "required": true
+        }
+      ]
+    }
+  ]
+}
