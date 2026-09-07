@@ -19,6 +19,7 @@ export interface JobRecord {
   visible_at: number;
   result?: any;
   created_at: number;
+  completed_at?: number;
   targetHost: string;
 }
 
@@ -85,6 +86,7 @@ export function completeJob(job_id: string, result: any, status: "completed" | "
     job.status = status;
     job.result = result;
     job.visible_at = 0;
+    job.completed_at = Date.now();
   }
 }
 

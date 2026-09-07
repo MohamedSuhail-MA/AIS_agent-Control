@@ -61,6 +61,73 @@ export function setupApiRoutes(app: Express) {
             },
             required: ["targetHost", "actionIdentifier"]
           }
+        },
+        {
+          name: "upload_artifact",
+          description: "Securely stream large files (crash dumps, massive IIS logs, memory dumps) back to the Control Plane avoiding the 50KB payload limit.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              targetHost: { type: "string" },
+              actionIdentifier: { type: "string", enum: ["__system_upload_artifact"] },
+              parameters: { 
+                type: "object",
+                properties: { filePath: { type: "string" } }
+              }
+            },
+            required: ["targetHost", "actionIdentifier"]
+          }
+        },
+        {
+          name: "get_system_metrics",
+          description: "Retrieves CPU, RAM, and Disk Drive space consumption metrics.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              targetHost: { type: "string" },
+              actionIdentifier: { type: "string", enum: ["metrics"] },
+              parameters: { type: "object" }
+            },
+            required: ["targetHost", "actionIdentifier"]
+          }
+        },
+        {
+          name: "analyze_event_viewer",
+          description: "Queries Windows Event Viewer for Application, Security, Setup, or System logs.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              targetHost: { type: "string" },
+              actionIdentifier: { type: "string", enum: ["event_logs"] },
+              parameters: { 
+                type: "object",
+                properties: {
+                  logName: { type: "string", enum: ["System", "Application", "Security"] },
+                  level: { type: "string", enum: ["Critical", "Error", "Warning", "Information"] }
+                }
+              }
+            },
+            required: ["targetHost", "actionIdentifier"]
+          }
+        },
+        {
+          name: "manage_services",
+          description: "Manage Windows Services like MSMQ, Print Spooler, W3SVC (IIS), etc.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              targetHost: { type: "string" },
+              actionIdentifier: { type: "string", enum: ["manage_service"] },
+              parameters: { 
+                type: "object",
+                properties: {
+                  serviceName: { type: "string" },
+                  action: { type: "string", enum: ["start", "stop", "restart", "status"] }
+                }
+              }
+            },
+            required: ["targetHost", "actionIdentifier"]
+          }
         }
       ]
     });
@@ -171,6 +238,47 @@ export function setupApiRoutes(app: Express) {
       res.json({ success: true });
     } catch (err: any) {
       res.status(400).json({ error: "Invalid approval payload", details: err.errors });
+    }
+  });
+
+  app.post("/api/ui/update-agent", (req, res) => {
+    try {
+      const { agent_id } = uiApproveSchema.parse(req.body);
+      
+      const agents = getAllAgents();
+      const agent = agents.find(a => a.id === agent_id);
+      if (!agent) {
+        return res.status(404).json({ error: "Agent not found" });
+      }
+
+      // Enqueue the system update job
+      const timestamp = Date.now();
+      const signature = signJobPayload(agent.hostname, "__system_update_agent", {}, timestamp);
+      const traceparent = `00-${randomBytes(16).toString("hex")}-${randomBytes(8).toString("hex")}-01`;
+      
+      enqueueJob(agent.hostname, "__system_update_agent", {}, signature, traceparent, timestamp);
+      
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(400).json({ error: "Invalid update payload", details: err.errors });
+    }
+  });
+
+  // Expose mock download route for the agent
+  app.get("/api/agent/download-latest", (req, res) => {
+    res.setHeader("Content-Disposition", 'attachment; filename="ZeroTrustAgent.exe"');
+    res.setHeader("Content-Type", "application/octet-stream");
+    res.send(Buffer.from("MZ\x90\x00...mock_executable_content_for_update..."));
+  });
+
+  // Artifact Upload endpoint
+  app.post("/api/agent/upload-artifact", (req, res) => {
+    try {
+      // In a real environment this would use busboy/multer to stream the file to an S3 bucket
+      const { job_id } = req.query;
+      res.json({ success: true, downloadUrl: `https://orchestrator.internal/artifacts/${job_id}/dump.dmp` });
+    } catch (err: any) {
+      res.status(500).json({ error: "Upload failed" });
     }
   });
 }

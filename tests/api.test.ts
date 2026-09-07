@@ -16,7 +16,10 @@ describe("Orchestrator Control Plane API (Supertest Suite)", () => {
       const res = await request(app).get("/api/mcp/tools/list");
       expect(res.status).toBe(200);
       expect(res.body.tools).toBeInstanceOf(Array);
-      expect(res.body.tools[0].name).toBe("execute_remote_command");
+      expect(res.body.tools.length).toBeGreaterThanOrEqual(1);
+      const toolNames = res.body.tools.map((t: any) => t.name);
+      expect(toolNames).toContain("execute_remote_command");
+      expect(toolNames).toContain("upload_artifact");
     });
   });
 

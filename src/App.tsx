@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { 
   Server, 
   Activity, 
@@ -8,10 +8,12 @@ import {
   Cpu, 
   TerminalSquare, 
   RefreshCw,
-  Play
+  Play,
+  BarChart3
 } from "lucide-react";
 import { motion } from "motion/react";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { JobRecord, AgentRecord } from "./types";
 
 export default function App() {
@@ -59,6 +61,17 @@ export default function App() {
     });
     fetchData();
   };
+
+  const chartData = useMemo(() => {
+    return jobs
+      .filter(j => j.status === 'completed' && j.completed_at)
+      .map(j => ({
+        time: format(new Date(j.completed_at!), 'HH:mm:ss'),
+        latency: j.completed_at! - j.created_at
+      }))
+      .sort((a, b) => a.time.localeCompare(b.time))
+      .slice(-20); // Show last 20 completed jobs
+  }, [jobs]);
 
   return (
     <div className="min-h-screen bg-neutral-50 text-neutral-900 font-sans">
@@ -153,6 +166,50 @@ export default function App() {
             {agents.length === 0 && !loading && (
               <div className="col-span-full py-12 text-center text-neutral-500 border-2 border-dashed border-neutral-200 rounded-xl">
                 No agents registered yet. Run the mock agent to see it here.
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-semibold flex items-center gap-2">
+              <BarChart3 className="w-6 h-6" /> Processing Latency
+            </h2>
+          </div>
+          <div className="bg-white border border-neutral-200 rounded-xl shadow-sm p-6">
+            {chartData.length > 0 ? (
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e5e5" />
+                    <XAxis dataKey="time" stroke="#a3a3a3" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis 
+                      stroke="#a3a3a3" 
+                      fontSize={12} 
+                      tickLine={false} 
+                      axisLine={false} 
+                      tickFormatter={(value) => `${value}ms`}
+                    />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '8px', border: '1px solid #e5e5e5', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      formatter={(value: number) => [`${value} ms`, 'Latency']}
+                      labelStyle={{ color: '#525252', marginBottom: '4px' }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="latency" 
+                      stroke="#10b981" 
+                      strokeWidth={3}
+                      dot={{ r: 4, strokeWidth: 2, fill: '#fff' }}
+                      activeDot={{ r: 6, fill: '#10b981' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-64 flex items-center justify-center text-neutral-400 border-2 border-dashed border-neutral-100 rounded-lg">
+                No completed job data available for latency charting.
               </div>
             )}
           </div>

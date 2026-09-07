@@ -16,6 +16,7 @@ export interface JobRecord {
   visible_at: number;
   result?: any;
   created_at: number;
+  completed_at?: number;
   targetHost: string;
 }
 
